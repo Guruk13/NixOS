@@ -21,12 +21,12 @@ in {
             extraPolicies = {
               DisableTelemetry = true;
               DisablePocket = true;
-              DisableFirefoxAccounts = true;
+              DisableFirefoxAccounts = false;
               DisableFeedbackCommands = true;
               DisableFirefoxStudies = true;
-              OfferToSaveLogins = false;
-              OffertosaveloginsDefault = false;
-              PasswordManagerEnabled = false;
+              OfferToSaveLogins = true;
+              OffertosaveloginsDefault = true;
+              PasswordManagerEnabled = true;
               EncryptedMediaExtensions.Enabled = true;
               OverrideFirstRunPage = "";
               OverridePostUpdatePage = "";
