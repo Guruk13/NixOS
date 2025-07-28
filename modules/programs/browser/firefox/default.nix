@@ -483,14 +483,6 @@ in {
                   ];
                 }
               ];
-              #extensions.packages = with pkgs.nur.repos.rycee.firefox-addons; [
-                #ublock-origin
-                #violentmonkey
-                #darkreader
-                #betterttv
-                #sponsorblock
-                #return-youtube-dislikes
-              #];
               settings = {};
               search = {
                 force = true;
