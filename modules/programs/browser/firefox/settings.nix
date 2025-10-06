@@ -149,7 +149,7 @@ in
   "app.shield.optoutstudies.enabled" = lock-false;
   "dom.security.https_only_mode" = lock-true;
   "dom.security.https_only_mode_ever_enabled" = lock-true;
-  "identity.fxaccounts.enabled" = lock-false;
+  "identity.fxaccounts.enabled" = true;
   "app.update.auto" = false;
   "browser.startup.homepage" = "";
   "browser.bookmarks.restore_default_bookmarks" = false;
