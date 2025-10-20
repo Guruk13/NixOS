@@ -11,7 +11,7 @@ let
     tuiFileManager
     kbdLayout
     kbdVariant
-    wallpaper
+    defaultWallpaper
     ;
 in
 {
@@ -46,15 +46,6 @@ in
   };
   services.displayManager.defaultSession = "hyprland";
 
-  xdg.portal = {
-    enable = true;
-    extraPortals = with pkgs; [
-      xdg-desktop-portal-hyprland
-      xdg-desktop-portal-gtk
-    ];
-    xdgOpenUsePortal = true;
-  };
-
   programs.hyprland = {
     enable = true;
     # withUWSM = true;
@@ -66,13 +57,33 @@ in
     in
     [
       (
-        { ... }:
+        { config, ... }:
         {
+          xdg.portal = {
+            enable = true;
+            extraPortals = with pkgs; [
+              xdg-desktop-portal-gtk
+            ];
+            xdgOpenUsePortal = true;
+            configPackages = [ config.wayland.windowManager.hyprland.package ];
+            config.hyprland = {
+              default = [
+                "hyprland"
+                "gtk"
+              ];
+              "org.freedesktop.impl.portal.OpenURI" = "gtk";
+              "org.freedesktop.impl.portal.FileChooser" = "gtk";
+              "org.freedesktop.impl.portal.Print" = "gtk";
+            };
+          };
+
           home.packages = with pkgs; [
-            hyprpaper
+            swww
             hyprpicker
             cliphist
+            wf-recorder
             grimblast
+            slurp
             swappy
             libnotify
             brightnessctl
@@ -95,13 +106,7 @@ in
           };
 
           # Set wallpaper
-          services.hyprpaper = {
-            enable = true;
-            settings = {
-              preload = [ "${../../themes/wallpapers/${wallpaper}.jxl}" ];
-              wallpaper = [ ",${../../themes/wallpapers/${wallpaper}.jxl}" ];
-            };
-          };
+          services.swww.enable = true;
 
           #test later systemd.user.targets.hyprland-session.Unit.Wants = [ "xdg-desktop-autostart.target" ];
           wayland.windowManager.hyprland = {
@@ -140,25 +145,30 @@ in
                 "WLR_RENDERER_ALLOW_SOFTWARE,1"
                 "NIXPKGS_ALLOW_UNFREE,1"
               ];
-              exec-once = [
-                #"[workspace 1 silent] ${terminal}"
-                #"[workspace 5 silent] ${browser}"
-                #"[workspace 6 silent] spotify"
-                #"[workspace special silent] ${browser} --private-window"
-                #"[workspace special silent] ${terminal}"
+              exec-once =
+                let
+                  wallpaper = pkgs.callPackage ./scripts/wallpaper.nix { inherit defaultWallpaper; };
+                in
+                [
+                  #"[workspace 1 silent] ${terminal}"
+                  #"[workspace 5 silent] ${browser}"
+                  #"[workspace 6 silent] spotify"
+                  #"[workspace special silent] ${browser} --private-window"
+                  #"[workspace special silent] ${terminal}"
 
-                "waybar"
-                "swaync"
-                "nm-applet --indicator"
-                "wl-clipboard-history -t"
-                "${getExe' pkgs.wl-clipboard "wl-paste"} --type text --watch cliphist store" # clipboard store text data
-                "${getExe' pkgs.wl-clipboard "wl-paste"} --type image --watch cliphist store" # clipboard store image data
-                "rm '$XDG_CACHE_HOME/cliphist/db'" # Clear clipboard
-                "${./scripts/batterynotify.sh}" # battery notification
-                # "${./scripts/autowaybar.sh}" # uncomment packages at the top
-                "polkit-agent-helper-1"
-                "pamixer --set-volume 50"
-              ];
+                  "${lib.getExe wallpaper}"
+                  "waybar"
+                  "swaync"
+                  "nm-applet --indicator"
+                  "wl-clipboard-history -t"
+                  "${getExe' pkgs.wl-clipboard "wl-paste"} --type text --watch cliphist store" # clipboard store text data
+                  "${getExe' pkgs.wl-clipboard "wl-paste"} --type image --watch cliphist store" # clipboard store image data
+                  "rm '$XDG_CACHE_HOME/cliphist/db'" # Clear clipboard
+                  "${./scripts/batterynotify.sh}" # battery notification
+                  # "${./scripts/autowaybar.sh}" # uncomment packages at the top
+                  "polkit-agent-helper-1"
+                  "pamixer --set-volume 50"
+                ];
               input = {
                 kb_layout = "${kbdLayout},ru";
                 kb_variant = "${kbdVariant},";
@@ -289,6 +299,7 @@ in
                 # Can use FLOAT FLOAT for active and inactive or just FLOAT
                 "opacity 0.80 0.80,class:^(kitty|alacritty|Alacritty|org.wezfurlong.wezterm)$"
                 "opacity 0.80 0.80,class:^(nvim-wrapper)$"
+                "opacity 0.90 0.90,class:^(Emacs)$"
                 "opacity 0.90 0.90,class:^(gcr-prompter)$" # keyring prompt
                 "opacity 0.90 0.90,title:^(Hyprland Polkit Agent)$" # polkit prompt
                 "opacity 1.00 1.00,class:^(firefox)$"
@@ -423,6 +434,7 @@ in
 
                   "$mainMod, A, exec, launcher drun" # launch desktop applications
                   "$mainMod, SPACE, exec, launcher drun" # launch desktop applications
+                  "$mainMod SHIFT, W, exec, launcher wallpaper" # launch wallpaper switcher
                   "$mainMod, Z, exec, launcher emoji" # launch emoji picker
                   "$mainMod SHIFT, T, exec, launcher tmux" # launch tmux sessions
                   "$mainMod, G, exec, launcher games" # game launcher
@@ -436,6 +448,8 @@ in
                   "$mainMod, M, exec, ${./scripts/rofimusic.sh}" # online music
 
                   # Screenshot/Screencapture
+                  "$mainMod SHIFT, R, exec, ${./scripts/screen-record.sh} a" # Screen Record (area select)
+                  "$mainMod CTRL, R, exec, ${./scripts/screen-record.sh} m" # Screen Record (monitor select)
                   "$mainMod, P, exec, ${./scripts/screenshot.sh} s" # drag to snip an area / click on a window to print it
                   "$mainMod CTRL, P, exec, ${./scripts/screenshot.sh} sf" # frozen screen, drag to snip an area / click on a window to print it
                   "$mainMod, print, exec, ${./scripts/screenshot.sh} m" # print focused monitor
@@ -537,34 +551,37 @@ in
                 "$mainMod, mouse:272, movewindow"
                 "$mainMod, mouse:273, resizewindow"
               ];
-            };
-            extraConfig = ''
-              binds {
-                workspace_back_and_forth = 0
+
+              binds = {
+                workspace_back_and_forth = 0;
                 #allow_workspace_cycles=1
                 #pass_mouse_when_bound=0
-              }
+              };
 
-              # Easily plug in any monitor
-              monitor=,preferred,auto,1
+              monitor = [
+                # Easily plug in any monitor
+                ",preferred,auto,1"
 
-              # 1080p-HDR monitor on the left, 4K-HDR monitor in the middle and 1080p vertical monitor on the right.
-              monitor=desc:BNQ BenQ EW277HDR 99J01861SL0,preferred,-1920x0,1
-              monitor=desc:BNQ BenQ EL2870U PCK00489SL0,preferred,0x0,2
-              monitor=desc:BNQ BenQ xl2420t 99D06760SL0,preferred,1920x-420,1,transform,1 # 5 for fipped
+                # My Monitors (Fine to leave these since i used the serial numbers)
+                "desc:BNQ BenQ EW277HDR 99J01861SL0,preferred,-1920x0,1"
+                "desc:BNQ BenQ EL2870U PCK00489SL0,preferred,0x0,2"
+                "desc:BNQ BenQ xl2420t 99D06760SL0,preferred,1920x-420,1,transform,1" # 5 for fipped
+              ];
 
-              # Binds workspaces to my monitors only (find desc with: hyprctl monitors)
-              workspace=1,monitor:desc:BNQ BenQ EL2870U PCK00489SL0,default:true
-              workspace=2,monitor:desc:BNQ BenQ EL2870U PCK00489SL0
-              workspace=3,monitor:desc:BNQ BenQ EL2870U PCK00489SL0
-              workspace=4,monitor:desc:BNQ BenQ EL2870U PCK00489SL0
-              workspace=5,monitor:desc:BNQ BenQ EW277HDR 99J01861SL0,default:true
-              workspace=6,monitor:desc:BNQ BenQ EW277HDR 99J01861SL0
-              workspace=7,monitor:desc:BNQ BenQ EW277HDR 99J01861SL0
-              workspace=8,monitor:desc:BNQ BenQ xl2420t 99D06760SL0,default:true
-              workspace=9,monitor:desc:BNQ BenQ xl2420t 99D06760SL0
-              workspace=10,monitor:desc:BNQ BenQ EL2870U PCK00489SL0
-            '';
+              workspace = [
+                # Binds workspaces to my monitors (find desc with: hyprctl monitors)
+                "1,monitor:desc:BNQ BenQ EL2870U PCK00489SL0,default:true"
+                "2,monitor:desc:BNQ BenQ EL2870U PCK00489SL0"
+                "3,monitor:desc:BNQ BenQ EL2870U PCK00489SL0"
+                "4,monitor:desc:BNQ BenQ EL2870U PCK00489SL0"
+                "5,monitor:desc:BNQ BenQ EW277HDR 99J01861SL0,default:true"
+                "6,monitor:desc:BNQ BenQ EW277HDR 99J01861SL0"
+                "7,monitor:desc:BNQ BenQ EW277HDR 99J01861SL0"
+                "8,monitor:desc:BNQ BenQ xl2420t 99D06760SL0,default:true"
+                "9,monitor:desc:BNQ BenQ xl2420t 99D06760SL0"
+                "10,monitor:desc:BNQ BenQ EL2870U PCK00489SL0"
+              ];
+            };
           };
         }
       )

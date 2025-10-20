@@ -19,12 +19,13 @@ in
   home-manager = {
     useGlobalPkgs = true;
     useUserPackages = true;
+    overwriteBackup = true;
     backupFileExtension = "backup";
     users.${username} = {
       # Let Home Manager install and manage itself.
       programs.home-manager.enable = true;
-
       xdg.enable = true;
+
       home = {
         username = "${username}";
         homeDirectory = "/home/${username}";

@@ -1,7 +1,5 @@
 { host, pkgs, ... }:
 let
-  inherit (import ../../../hosts/${host}/variables.nix) wallpaper;
-
   # Choose the desired variant: "main", "moon", or "dawn"
   variant = "main";
 
@@ -60,15 +58,6 @@ in
             {
               General.theme = kvantumThemeName;
             };
-
-        # Wallpaper configuration
-        services.hyprpaper = {
-          enable = true;
-          settings = {
-            preload = [ "${../wallpapers/${wallpaper}}" ];
-            wallpaper = [ ",${../wallpapers/${wallpaper}}" ];
-          };
-        };
 
         # GNOME dark mode
         dconf.settings = {

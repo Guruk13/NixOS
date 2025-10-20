@@ -142,6 +142,19 @@ To apply changes or rebuild the system, use one of the following methods:
 
 Replace `<HOST>` with the name of your host (e.g., `Default`).
 
+### Rollback to a Generation
+- List available generations in the terminal:
+
+  ```bash
+  list-gens
+  ```
+
+- Rollback to a specific generation (replace `N` with the generation number):
+
+  ```bash
+  rollback N
+  ```
+
 ### Viewing Keybindings
 
 To view configured keybindings:
